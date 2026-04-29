@@ -1,3 +1,3 @@
-# Pop2Piano Study Pages
+# Study Atlas
 
-Research seminar style GitHub Pages site for Pop2Piano and adjacent audio-based piano arrangement generation research.
+Expandable GitHub Pages learning hub. Current topic: Pop2Piano & audio-based piano arrangement generation.
