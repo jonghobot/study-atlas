@@ -1,1 +1,1 @@
-function showAnswer(id){document.getElementById(id).style.display='block'}
+function showAnswer(id){const e=document.getElementById(id); if(e) e.style.display='block'}
