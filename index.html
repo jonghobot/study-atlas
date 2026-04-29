@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Study Atlas</title>
+  <meta name="description" content="개념 설명, 논문 리뷰, 객관식/주관식 퀴즈를 포함한 정돈된 학습 페이지" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <nav>
+      <strong>Study Atlas</strong>
+      <a href="#concepts">개념</a>
+      <a href="#papers">논문 리뷰</a>
+      <a href="#quiz">퀴즈</a>
+    </nav>
+    <section>
+      <p class="eyebrow">GitHub Pages Learning Kit</p>
+      <h1>주제만 바꾸면 바로 쓰는 학습 자료 허브</h1>
+      <p class="lead">다양한 공부 주제를 위해 개념 설명, 논문 리뷰, 객관식·주관식 퀴즈를 한 흐름으로 정리하는 템플릿입니다.</p>
+      <a class="button" href="#start">학습 구조 보기</a>
+    </section>
+  </header>
+
+  <main>
+    <section id="start" class="grid three">
+      <article><span>01</span><h2>개념 이해</h2><p>핵심 용어, 직관, 예시, 오해하기 쉬운 지점을 짧고 명확하게 정리합니다.</p></article>
+      <article><span>02</span><h2>논문 리뷰</h2><p>문제의식, 방법론, 실험, 기여점, 한계를 구조화해서 읽습니다.</p></article>
+      <article><span>03</span><h2>퀴즈 점검</h2><p>객관식으로 빠르게 확인하고, 주관식으로 설명 능력을 점검합니다.</p></article>
+    </section>
+
+    <section id="concepts" class="panel">
+      <p class="eyebrow">Concept Notes</p>
+      <h2>개념 설명 템플릿</h2>
+      <div class="split">
+        <div>
+          <h3>핵심 개념</h3>
+          <p><strong>[주제명]</strong>은/는 무엇을 해결하려는 개념인지 한 문단으로 설명합니다.</p>
+          <ul>
+            <li>정의: 가장 압축된 설명</li>
+            <li>직관: 비유나 그림 없이도 떠올릴 수 있는 이미지</li>
+            <li>예시: 실제 적용 사례 1–2개</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>학습 체크포인트</h3>
+          <p>“이 개념이 왜 필요한가?”와 “어디까지가 한계인가?”를 말할 수 있으면 통과입니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="papers" class="panel alt">
+      <p class="eyebrow">Paper Review</p>
+      <h2>논문 리뷰 구조</h2>
+      <ol class="timeline">
+        <li><strong>한 줄 요약</strong><br/>논문이 푼 문제와 핵심 아이디어를 한 문장으로.</li>
+        <li><strong>배경과 문제</strong><br/>기존 방법의 한계와 저자가 잡은 빈틈.</li>
+        <li><strong>방법</strong><br/>모델, 알고리즘, 실험 설계, 데이터셋.</li>
+        <li><strong>결과와 해석</strong><br/>수치뿐 아니라 왜 의미 있는지 설명.</li>
+        <li><strong>비판적 메모</strong><br/>가정, 재현성, 일반화 가능성, 후속 질문.</li>
+      </ol>
+    </section>
+
+    <section id="quiz" class="panel">
+      <p class="eyebrow">Quiz Bank</p>
+      <h2>퀴즈</h2>
+      <div class="quiz">
+        <article>
+          <h3>객관식</h3>
+          <p>Q. 좋은 개념 설명에 반드시 포함되면 좋은 것은?</p>
+          <label><input type="radio" name="q1" /> A. 용어 나열만 하기</label>
+          <label><input type="radio" name="q1" /> B. 정의, 직관, 예시, 한계</label>
+          <label><input type="radio" name="q1" /> C. 결론 없이 인용문만 모으기</label>
+          <button onclick="showAnswer('a1')">정답 보기</button>
+          <p id="a1" class="answer">정답: B</p>
+        </article>
+        <article>
+          <h3>주관식</h3>
+          <p>Q. 오늘 배운 개념을 “처음 듣는 사람”에게 5문장 이내로 설명해보세요.</p>
+          <textarea placeholder="여기에 답을 써보세요"></textarea>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>Made for structured learning · GitHub Pages ready</footer>
+  <script src="script.js"></script>
+</body>
+</html>
