@@ -11,12 +11,13 @@
 - 공통 JS/검색 기능: `script.js`
 - 검색 인덱스: `search-index.json`
 - DeepSeek V4 리뷰 목록: `topics/deepseek-v4/reviews.html`
-- Ring Attention 상세 페이지: `topics/deepseek-v4/reviews/ring-attention.html`
+- 개별 리뷰 페이지: `topics/<topic>/reviews/<paper>.html`
+- 주제별 개요 페이지: `topics/<topic>/index.html`
 
 ## 기본 작업 흐름
 
 1. `git status --short`로 작업트리 확인.
-2. 요청 대상 페이지만 읽기. 예: Ring Attention이면 `topics/deepseek-v4/reviews/ring-attention.html`부터 본다.
+2. 요청 대상 페이지만 읽기. 예: 특정 논문 리뷰면 해당 `topics/<topic>/reviews/<paper>.html`부터 본다.
 3. 새 자료조사는 필요한 논문/공식 문서만 짧게 fetch하고, 페이지에 반영할 내용만 남긴다.
 4. 페이지 본문 수정 후 검색 인덱스 재생성:
    ```bash
@@ -36,19 +37,32 @@
    ```
 6. 변경 확인 후 커밋/푸시.
 
-## Ring Attention 페이지 확장 규칙
+## 콘텐츠 페이지 확장 규칙
 
-- 기존 구조를 유지하면서 section 단위로 추가한다.
-- 너무 긴 문단보다 `panel`, `grid g2`, `table`을 활용해 읽기 좋게 쪼갠다.
-- 추가할 만한 섹션 후보:
-  - 논문 수식/알고리즘 직관
-  - Figure별 해설
-  - 실험 결과 표 해석
-  - FlashAttention / sequence parallelism / Ring FlashAttention 계열 비교
-  - DeepSeek V4 serving 관점 메모
+- 특정 페이지에만 임시로 덧붙이지 말고, 기존 구조를 유지하면서 section 단위로 추가한다.
+- 너무 긴 문단보다 `panel`, `grid g2`, `table`, `review`, `paper` 같은 기존 CSS 컴포넌트를 활용해 읽기 좋게 쪼갠다.
+- 논문/기술 리뷰 페이지에 추가할 만한 섹션 후보:
+  - 30초 요약 / 한 줄 요약
+  - 문제의식과 배경
+  - 핵심 아이디어와 알고리즘 직관
+  - 수식/figure/table 해설
+  - 실험 결과와 metric 해석
+  - 기존 방법과의 비교표
+  - 실제 제품/serving/연구 적용 관점
+  - 한계와 실패할 수 있는 조건
   - 세미나 질문/퀴즈
   - 참고문헌/링크 모음
-- “처리 가능 context 길이”와 “긴 context에서 실제 추론 품질”을 항상 구분해서 쓴다.
+- 주제 개요 페이지에 추가할 만한 섹션 후보:
+  - 읽는 순서
+  - 핵심 개념 지도
+  - 주요 논문/기술 타임라인
+  - 연구 질문과 후속 아이디어
+  - 실험/프로젝트 체크리스트
+- 항상 구분해서 쓸 것:
+  - 논문이 직접 보인 결과 vs 해석/추정
+  - 학습(training) 병목 vs 추론(inference) 병목
+  - 처리 가능성/성능 수치 vs 실제 품질/사용성
+  - 모델 구조 문제 vs 시스템/서빙 문제
 
 ## 검색 기능 유지 규칙
 
