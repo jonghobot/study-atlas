@@ -77,6 +77,43 @@
         <div><strong>효과</strong><br>Attention score 전체를 저장하지 않아도 됩니다. 각 query block은 현재 output 누적값, 최대 score, normalization 누적합만 유지하면 되므로 blockwise/ring 계산과 잘 맞습니다.</div>
       </div>
       <p>이 부분이 빠지면 block별 softmax를 따로 계산한 뒤 평균내는 식이 되어 full attention과 달라집니다. Ring Attention이 “approximation 없이” 긴 context를 다룬다고 말할 수 있는 이유 중 하나가 바로 이 streaming softmax merge입니다.</p>
+      <figure class="figure">
+        <img src="../../../assets/streaming-softmax.svg" alt="Streaming softmax가 block별 score를 받아 running max, denominator, output을 갱신하는 애니메이션">
+        <figcaption class="caption">KV block이 순서대로 도착할 때마다 이전 누적값을 새 max 기준으로 rescale한 뒤 합칩니다.</figcaption>
+      </figure>
+      <h3>PyTorch로 느낌 보기</h3>
+      <p>아래 코드는 score를 block 단위로 나눠 처리해도, 마지막 결과가 일반 softmax attention과 거의 같다는 것을 보여주는 최소 예시입니다.</p>
+      <pre><code class="code">import torch
+
+torch.manual_seed(0)
+q = torch.randn(1, 4)      # query 1개
+k = torch.randn(6, 4)      # key 6개
+v = torch.randn(6, 3)      # value 6개
+
+# 기준값: 한 번에 full attention 계산
+scores = q @ k.T
+full = torch.softmax(scores, dim=-1) @ v
+
+# streaming softmax: KV를 block으로 나눠 순서대로 병합
+m = torch.tensor(float("-inf"))
+l = torch.tensor(0.0)
+o = torch.zeros(3)
+
+for kb, vb in zip(k.split(2), v.split(2)):
+    s = (q @ kb.T).squeeze(0)       # 현재 block score
+    m_new = torch.maximum(m, s.max())
+
+    old_scale = torch.exp(m - m_new)
+    block_exp = torch.exp(s - m_new)
+
+    o = o * old_scale + block_exp @ vb
+    l = l * old_scale + block_exp.sum()
+    m = m_new
+
+streaming = o / l
+print(torch.allclose(full.squeeze(0), streaming, atol=1e-6))
+print(full.squeeze(0))
+print(streaming)</code></pre>
     </section>
 
     <section class="panel">

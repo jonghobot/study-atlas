@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="360" viewBox="0 0 900 360" role="img" aria-labelledby="title desc">
+  <title id="title">Streaming softmax blockwise merge animation</title>
+  <desc id="desc">Three score blocks arrive one by one. The running max, denominator and output are updated after each block.</desc>
+  <style>
+    .bg{fill:#070a12}.panel{fill:#101827;stroke:#273653;stroke-width:2}.muted{fill:#a9b7ce;font:16px system-ui, sans-serif}.txt{fill:#eef4ff;font:18px system-ui, sans-serif;font-weight:700}.small{fill:#a9b7ce;font:14px system-ui, sans-serif}.accent{fill:#7ce7c7}.blue{fill:#8fb5ff}.gold{fill:#ffd479}.bar{fill:#142034;stroke:#273653}.active{fill:#7ce7c7}.ghost{opacity:.22}.arrow{stroke:#8fb5ff;stroke-width:4;fill:none;marker-end:url(#arrow)}
+    #b1,#a1,#s1{animation:pulse 4.5s infinite}#b2,#a2,#s2{animation:pulse 4.5s infinite;animation-delay:1.5s}#b3,#a3,#s3{animation:pulse 4.5s infinite;animation-delay:3s}
+    #m1,#l1,#o1{animation:show1 4.5s infinite}#m2,#l2,#o2{animation:show2 4.5s infinite}#m3,#l3,#o3{animation:show3 4.5s infinite}
+    @keyframes pulse{0%,30%,100%{opacity:.25}8%,22%{opacity:1}}
+    @keyframes show1{0%,32%,100%{opacity:0}8%,31%{opacity:1}}
+    @keyframes show2{0%,32%,65%,100%{opacity:0}40%,64%{opacity:1}}
+    @keyframes show3{0%,65%,100%{opacity:0}72%,98%{opacity:1}}
+  </style>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#8fb5ff"/></marker></defs>
+  <rect class="bg" width="900" height="360" rx="24"/>
+  <text x="32" y="42" class="txt">Streaming softmax: block이 와도 full softmax처럼 누적</text>
+  <text x="32" y="70" class="muted">각 step에서 max(m), exp 누적합(l), output(o)을 새 기준으로 보정한다</text>
+
+  <rect x="32" y="104" width="250" height="190" rx="18" class="panel"/>
+  <text x="54" y="134" class="txt">KV score blocks</text>
+  <g id="b1"><rect x="58" y="158" width="52" height="90" rx="8" class="active"/><text x="67" y="275" class="small">B1</text></g>
+  <g id="b2"><rect x="126" y="134" width="52" height="114" rx="8" class="blue"/><text x="135" y="275" class="small">B2</text></g>
+  <g id="b3"><rect x="194" y="174" width="52" height="74" rx="8" class="gold"/><text x="203" y="275" class="small">B3</text></g>
+
+  <path d="M300 198 C340 198 348 198 388 198" class="arrow"/>
+  <rect x="398" y="104" width="220" height="190" rx="18" class="panel"/>
+  <text x="420" y="134" class="txt">running state</text>
+  <text id="m1" x="426" y="172" class="accent">m = max(B1)</text>
+  <text id="l1" x="426" y="204" class="accent">l = Σ exp(B1 - m)</text>
+  <text id="o1" x="426" y="236" class="accent">o = weighted V1</text>
+  <text id="m2" x="426" y="172" class="blue">m ← max(m, max(B2))</text>
+  <text id="l2" x="426" y="204" class="blue">l ← rescale old + B2</text>
+  <text id="o2" x="426" y="236" class="blue">o ← rescale old + V2</text>
+  <text id="m3" x="426" y="172" class="gold">m ← max(m, max(B3))</text>
+  <text id="l3" x="426" y="204" class="gold">l ← rescale old + B3</text>
+  <text id="o3" x="426" y="236" class="gold">o ← final normalized output</text>
+
+  <path d="M636 198 C676 198 684 198 724 198" class="arrow"/>
+  <rect x="736" y="104" width="132" height="190" rx="18" class="panel"/>
+  <text x="758" y="134" class="txt">result</text>
+  <rect x="770" y="166" width="64" height="82" rx="10" class="bar"/>
+  <rect id="a1" x="770" y="214" width="64" height="34" rx="8" class="active"/>
+  <rect id="a2" x="770" y="184" width="64" height="64" rx="8" class="blue"/>
+  <rect id="a3" x="770" y="166" width="64" height="82" rx="8" class="gold"/>
+  <text x="750" y="275" class="small">full attention과 같은 값</text>
+</svg>
