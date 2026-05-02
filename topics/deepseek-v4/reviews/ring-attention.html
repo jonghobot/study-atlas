@@ -140,6 +140,44 @@
       <p>Ring Attention은 long context를 가능하게 하는 “마법 attention”이라기보다, full attention을 유지한 채 sequence를 device 축으로 분산하는 실행 전략입니다. DeepSeek V4 같은 장문맥 모델을 평가할 때는 모델 구조의 효율성과 분산 serving의 현실성을 따로 놓고 봐야 합니다.</p>
     </section>
 
+    <section class="panel quiz">
+  <h2>이해 확인 퀴즈</h2>
+  <h3>단답 주관식</h3>
+  <ol>
+    <li><p>Ring Attention에서 ring을 따라 이동하는 것은 무엇인가?</p><button onclick="showAnswer('ring_attention_short_1')">정답 보기</button><p class="answer" id="ring_attention_short_1">Key/value block이다.</p></li>
+    <li><p>각 device가 고정적으로 들고 있는 것은 무엇인가?</p><button onclick="showAnswer('ring_attention_short_2')">정답 보기</button><p class="answer" id="ring_attention_short_2">자기 query block과 그에 대한 attention output 누적 상태다.</p></li>
+    <li><p>streaming softmax가 필요한 이유는?</p><button onclick="showAnswer('ring_attention_short_3')">정답 보기</button><p class="answer" id="ring_attention_short_3">block별 partial attention을 full attention과 같은 normalization으로 정확히 병합하기 위해서다.</p></li>
+    <li><p>Ring Attention의 가장 큰 시스템적 리스크는 무엇인가?</p><button onclick="showAnswer('ring_attention_short_4')">정답 보기</button><p class="answer" id="ring_attention_short_4">device 간 통신 비용, latency, straggler, 구현 복잡도다.</p></li>
+  </ol>
+  <h3>객관식</h3>
+  <ol>
+    <li><p>Ring Attention의 핵심 목표는?</p>
+      <label><input type="radio" name="ring_attention_mc_1"> sequence를 device에 나눠 long context를 처리</label>
+      <label><input type="radio" name="ring_attention_mc_1"> 모든 token을 검색 DB에 저장</label>
+      <label><input type="radio" name="ring_attention_mc_1"> expert 수를 줄임</label>
+      <label><input type="radio" name="ring_attention_mc_1"> HTML 렌더링 가속</label>
+      <button onclick="showAnswer('ring_attention_mc_1')">정답 보기</button><p class="answer" id="ring_attention_mc_1">sequence를 device에 나눠 long context를 처리</p></li>
+    <li><p>Ring Attention이 approximation이 아니라고 말할 수 있는 핵심 이유는?</p>
+      <label><input type="radio" name="ring_attention_mc_2"> streaming softmax로 full attention 결과를 유지하기 때문</label>
+      <label><input type="radio" name="ring_attention_mc_2"> 일부 token만 보기 때문</label>
+      <label><input type="radio" name="ring_attention_mc_2"> 정답을 retrieval하기 때문</label>
+      <label><input type="radio" name="ring_attention_mc_2"> softmax를 없애기 때문</label>
+      <button onclick="showAnswer('ring_attention_mc_2')">정답 보기</button><p class="answer" id="ring_attention_mc_2">streaming softmax로 full attention 결과를 유지하기 때문</p></li>
+    <li><p>Ring Attention과 가장 가까운 관점은?</p>
+      <label><input type="radio" name="ring_attention_mc_3"> 분산 시스템/sequence parallelism</label>
+      <label><input type="radio" name="ring_attention_mc_3"> 음악 편곡</label>
+      <label><input type="radio" name="ring_attention_mc_3"> 프론트엔드 라우팅</label>
+      <label><input type="radio" name="ring_attention_mc_3"> 사용자 인증</label>
+      <button onclick="showAnswer('ring_attention_mc_3')">정답 보기</button><p class="answer" id="ring_attention_mc_3">분산 시스템/sequence parallelism</p></li>
+    <li><p>Ring Attention에서 성능을 좌우하는 요소는?</p>
+      <label><input type="radio" name="ring_attention_mc_4"> interconnect bandwidth와 overlap 효율</label>
+      <label><input type="radio" name="ring_attention_mc_4"> CSS 색상</label>
+      <label><input type="radio" name="ring_attention_mc_4"> 문서 제목 길이</label>
+      <label><input type="radio" name="ring_attention_mc_4"> 브라우저 북마크 수</label>
+      <button onclick="showAnswer('ring_attention_mc_4')">정답 보기</button><p class="answer" id="ring_attention_mc_4">interconnect bandwidth와 overlap 효율</p></li>
+  </ol>
+</section>
+
     <div class="next"><a href="longlora.html">← Previous</a><a href="streamingllm.html">Next →</a></div>
   </main>
   <footer><div class="wrap">Expandable learning pages for concepts, paper reviews, quizzes, and research planning.</div></footer>
