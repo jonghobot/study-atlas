@@ -26,16 +26,22 @@
       <p><a class="button" href="https://arxiv.org/abs/2310.01889">원문/자료 보기</a> <a class="button" href="../reviews.html">리뷰 목록</a></p>
     </section>
 
+    <section class="panel">
+      <h2>30초 요약</h2>
+      <p>Ring Attention은 long-context Transformer를 위해 sequence를 여러 device에 나눠 올리고, key/value block을 ring topology로 순환시키며 attention을 계산하는 방법입니다. 핵심은 <strong>full attention을 포기하지 않으면서</strong> 단일 device 메모리 한계를 넘는 것입니다. 계산 중에는 다음 KV block 통신을 미리 진행해 communication과 computation을 overlap합니다.</p>
+      <p>이 논문을 DeepSeek V4 맥락에서 읽으면, “1M context” 같은 주장이 단순히 RoPE scaling이나 attention 변형만으로 끝나는 문제가 아니라 <strong>KV cache 배치, interconnect, scheduler, tail latency</strong>까지 포함한 시스템 설계 문제라는 점이 선명해집니다.</p>
+    </section>
+
     <section class="grid g2">
       <article class="card">
         <h3>문제의식</h3>
-        <p>Transformer의 self-attention은 sequence 길이가 늘수록 attention score와 KV 저장량이 급격히 커집니다. FlashAttention류의 kernel 최적화가 메모리 I/O를 줄여도, 단일 device가 감당해야 하는 sequence 길이 자체가 커지면 결국 context window 확장이 막힙니다.</p>
+        <p>Transformer의 self-attention은 모든 query token이 모든 key token을 봅니다. 이 구조는 표현력은 강하지만, sequence 길이 L이 커질수록 attention score 계산은 대략 O(L²), KV 저장량은 O(L)로 커집니다. FlashAttention류의 kernel 최적화가 memory I/O를 줄여도, 단일 device에 올려야 하는 token 수가 계속 늘어나면 결국 context window 확장이 막힙니다.</p>
         <p>Ring Attention의 핵심 질문은 단순합니다. “모델 파라미터가 아니라 token sequence를 여러 device에 나눠 담으면, approximation 없이 더 긴 context를 처리할 수 있는가?”</p>
       </article>
       <article class="card">
         <h3>핵심 아이디어</h3>
         <p>Sequence를 block으로 쪼개고, 각 device는 자기 query block을 유지합니다. Key/value block은 device들 사이를 ring 형태로 순환하고, 각 device는 도착한 KV block에 대해 blockwise attention을 계산합니다.</p>
-        <p>중요한 점은 통신과 계산을 겹친다는 것입니다. 다음 KV block이 ring을 타고 오는 동안 현재 block의 attention을 계산해, device 수에 비례해 sequence 길이를 늘리면서도 추가 통신/계산 overhead를 작게 유지하려고 합니다.</p>
+        <p>중요한 점은 통신과 계산을 겹친다는 것입니다. 다음 KV block이 ring을 타고 오는 동안 현재 block의 attention을 계산해, device 수에 비례해 sequence 길이를 늘리면서도 추가 overhead를 숨기려 합니다.</p>
       </article>
       <article class="card">
         <h3>왜 approximation이 아닌가</h3>
@@ -43,10 +49,35 @@
         <p>따라서 “긴 문맥을 대충 압축해서 본다”가 아니라 “전체 문맥을 보되, 계산 순서와 데이터 배치를 바꾼다”에 가깝습니다.</p>
       </article>
       <article class="card">
-        <h3>실험이 말하는 것</h3>
-        <p>논문은 language modeling과 reinforcement learning 작업에서 million-token급 context를 다루는 방향을 제시합니다. 저자들은 기존 memory-efficient Transformer 대비 device 수만큼 더 긴 sequence를 학습·추론할 수 있다고 주장합니다.</p>
-        <p>다만 이 수치는 모델 품질 하나만의 성과라기보다, interconnect bandwidth, pipeline overlap, block 크기 선택이 함께 맞아떨어질 때 가능한 시스템 성과로 읽어야 합니다.</p>
+        <h3>논문의 주장</h3>
+        <p>저자들은 Ring Attention이 기존 memory-efficient Transformer가 처리할 수 있는 sequence보다 device 수에 비례해 더 긴 sequence를 학습·추론할 수 있다고 주장합니다. language modeling과 reinforcement learning 실험에서 million-token급 context 가능성을 보입니다.</p>
+        <p>다만 이 주장은 모델 품질 하나만의 성과라기보다, interconnect bandwidth, pipeline overlap, block 크기, activation checkpointing이 함께 맞아떨어질 때 가능한 시스템 성과로 읽어야 합니다.</p>
       </article>
+    </section>
+
+    <section class="panel">
+      <h2>작동 방식: query는 고정, KV가 돈다</h2>
+      <ol>
+        <li><strong>Sequence partitioning:</strong> 전체 token sequence를 여러 block으로 나누고 device마다 일부 block을 맡깁니다.</li>
+        <li><strong>Local query:</strong> 각 device는 자기 query block을 기준으로 attention output을 누적합니다.</li>
+        <li><strong>Ring communication:</strong> key/value block이 이웃 device로 전달됩니다. 한 step이 끝날 때마다 각 device는 다른 구간의 KV를 받습니다.</li>
+        <li><strong>Blockwise attention:</strong> 받은 KV block에 대해 attention partial result를 계산합니다.</li>
+        <li><strong>Streaming softmax merge:</strong> block별 partial score를 numerically stable하게 병합해 전체 attention 결과와 맞춥니다.</li>
+        <li><strong>Overlap:</strong> 현재 block을 계산하는 동안 다음 block 통신을 진행해 통신 시간을 숨깁니다.</li>
+      </ol>
+      <p>직관적으로는 “각 GPU가 자기 질문지를 들고 있고, 참고자료 묶음(KV)이 원탁을 돌며 지나갈 때마다 답안을 조금씩 채우는 방식”입니다.</p>
+    </section>
+
+    <section class="panel">
+      <h2>기존 방법과의 차이</h2>
+      <table class="table">
+        <tr><th>접근</th><th>무엇을 줄이나</th><th>장점</th><th>주의점</th></tr>
+        <tr><td>FlashAttention</td><td>Attention kernel의 HBM I/O</td><td>Exact attention, 널리 쓰이는 실용 최적화</td><td>단일 device sequence 한계 자체를 없애진 않음</td></tr>
+        <tr><td>Sparse / sliding attention</td><td>보는 token 수</td><td>계산량을 직접 줄임</td><td>Full attention이 아니므로 task에 따라 정보 손실 가능</td></tr>
+        <tr><td>Retrieval / RAG</td><td>모델에 넣는 context 양</td><td>저렴하고 제품화 쉬움</td><td>검색 실패 시 필요한 evidence를 못 봄</td></tr>
+        <tr><td>YaRN / RoPE scaling</td><td>Positional encoding의 길이 일반화 문제</td><td>기존 모델 context 확장에 유용</td><td>계산·KV cache 비용은 여전히 남음</td></tr>
+        <tr><td>Ring Attention</td><td>단일 device가 들고 있어야 하는 sequence/KV 부담</td><td>Exact attention을 유지하며 device 수만큼 길이 확장 가능</td><td>분산 통신, 구현 복잡도, latency 리스크 큼</td></tr>
+      </table>
     </section>
 
     <section class="panel">
@@ -56,6 +87,7 @@
         <li><strong>모델 구조 관점:</strong> attention 계산량과 KV cache를 줄이면 같은 hardware에서 더 긴 context 또는 더 많은 동시 요청을 처리할 수 있습니다.</li>
         <li><strong>시스템 관점:</strong> sequence parallelism을 잘 설계하면 단일 device 메모리 한계를 넘어 context window를 확장할 수 있습니다.</li>
         <li><strong>serving 관점:</strong> 실제 제품에서는 평균 throughput보다 p95/p99 latency, KV 이동 비용, scheduler 복잡도가 더 큰 병목이 될 수 있습니다.</li>
+        <li><strong>평가 관점:</strong> “1M token 입력 가능”과 “1M token 안에서 필요한 정보를 찾아 정확히 추론”은 별개입니다. Ring Attention은 전자를 위한 실행 전략이고, 후자는 모델 학습·평가 문제입니다.</li>
       </ul>
     </section>
 
@@ -65,7 +97,19 @@
         <li><strong>통신 의존성:</strong> ring 구조는 device 간 bandwidth와 latency에 민감합니다. NVLink/InfiniBand급 환경과 일반 cloud interconnect의 체감 성능은 다를 수 있습니다.</li>
         <li><strong>작은 batch·interactive serving:</strong> 긴 문서 하나를 빠르게 답해야 하는 agent use case에서는 overlap 효율이 충분히 나오지 않을 수 있습니다.</li>
         <li><strong>구현 복잡도:</strong> numerically stable streaming softmax, activation checkpointing, attention kernel, distributed runtime이 함께 맞아야 합니다.</li>
+        <li><strong>Straggler 문제:</strong> ring의 한 device가 늦어지면 전체 step이 영향을 받습니다. 대규모 serving에서는 placement와 장애 격리가 중요합니다.</li>
         <li><strong>품질 문제는 별개:</strong> million-token을 “넣을 수 있음”과 그 안에서 정확히 찾고 추론할 수 있음은 다릅니다. Needle-in-a-haystack, long-range dependency, multi-hop QA를 따로 봐야 합니다.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>실제로 읽을 때 봐야 할 포인트</h2>
+      <ul>
+        <li><strong>Block size:</strong> block이 너무 작으면 통신 overhead가 커지고, 너무 크면 memory pressure와 overlap 효율 문제가 생깁니다.</li>
+        <li><strong>Interconnect:</strong> 논문의 성능 주장은 어떤 device topology에서 측정됐는지 봐야 합니다. GPU 내부/서버 내부/서버 간 통신은 완전히 다른 문제입니다.</li>
+        <li><strong>Training vs inference:</strong> 학습에서는 activation과 gradient까지 고려해야 하고, 추론에서는 prefill과 decode 단계의 병목이 다릅니다.</li>
+        <li><strong>Prefill vs decode:</strong> 긴 prompt를 한 번에 읽는 prefill에는 sequence parallelism이 잘 맞을 수 있지만, token-by-token decode는 KV cache 접근 패턴이 달라집니다.</li>
+        <li><strong>End-to-end metric:</strong> TFLOPs나 token length보다 실제 사용자가 보는 latency, cost/request, 정확도, 실패율을 함께 봐야 합니다.</li>
       </ul>
     </section>
 
@@ -76,6 +120,7 @@
         <li>DeepSeek V4의 1M context 주장을 검증할 때 “처리 가능 길이”, “정확도”, “latency”, “cost per request”를 어떻게 분리해서 볼 것인가?</li>
         <li>Ring Attention, FlashAttention, sparse/retrieval attention은 서로 대체재인가, 아니면 다른 layer의 최적화인가?</li>
         <li>실제 serving에서 ring parallelism을 쓰려면 scheduler, KV cache placement, request batching을 어떻게 설계해야 할까?</li>
+        <li>장문맥 agent에서 “모든 걸 context에 넣는 방식”과 “memory/retrieval로 선별하는 방식”은 어떤 조건에서 각각 유리한가?</li>
       </ul>
     </section>
 
