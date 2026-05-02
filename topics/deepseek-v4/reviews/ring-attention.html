@@ -69,6 +69,17 @@
     </section>
 
     <section class="panel">
+      <h2>Streaming softmax는 왜 필요한가</h2>
+      <p>일반적인 attention은 먼저 모든 score <code>QKᵀ</code>를 만든 뒤 softmax를 적용하고, 그 weight로 <code>V</code>를 가중합합니다. 문제는 긴 context에서는 모든 score matrix를 한 번에 메모리에 올릴 수 없다는 점입니다. Ring Attention처럼 KV block을 나눠 받아 계산하려면, “지금 본 block의 softmax 결과”를 나중에 도착할 block과 정확히 합칠 수 있어야 합니다.</p>
+      <p>Streaming softmax는 이 문제를 해결하기 위해 각 query마다 두 값을 계속 들고 갑니다. 하나는 지금까지 본 score의 최대값 <code>m</code>, 다른 하나는 exp score의 누적합 <code>l</code>입니다. 새 block의 score가 들어오면 새 최대값 <code>m_new</code>를 기준으로 이전 누적값을 다시 스케일링하고, 새 block의 exp 합을 더합니다. 이렇게 하면 block을 순서대로 처리해도 전체 token을 한 번에 softmax한 것과 같은 normalization을 만들 수 있습니다.</p>
+      <div class="review">
+        <div><strong>직관</strong><br>새 KV block이 올 때마다 “지금까지 본 후보들 중 최고 점수” 기준을 갱신하고, 이전 가중합을 새 기준에 맞춰 재조정합니다. 그래서 뒤늦게 더 큰 score가 나타나도 앞 block 결과를 버리지 않고 정확히 보정할 수 있습니다.</div>
+        <div><strong>효과</strong><br>Attention score 전체를 저장하지 않아도 됩니다. 각 query block은 현재 output 누적값, 최대 score, normalization 누적합만 유지하면 되므로 blockwise/ring 계산과 잘 맞습니다.</div>
+      </div>
+      <p>이 부분이 빠지면 block별 softmax를 따로 계산한 뒤 평균내는 식이 되어 full attention과 달라집니다. Ring Attention이 “approximation 없이” 긴 context를 다룬다고 말할 수 있는 이유 중 하나가 바로 이 streaming softmax merge입니다.</p>
+    </section>
+
+    <section class="panel">
       <h2>기존 방법과의 차이</h2>
       <table class="table">
         <tr><th>접근</th><th>무엇을 줄이나</th><th>장점</th><th>주의점</th></tr>
