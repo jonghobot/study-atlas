@@ -1,1 +1,92 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Ring Attention with Blockwise Transformers for Near-Infinite Context · DeepSeek V4</title><meta name="description" content="Ring Attention with Blockwise Transformers for Near-Infinite Context 상세 리뷰"><link rel="stylesheet" href="../../../styles.css"></head><body><header class="top"><div class="wrap nav"><a class="brand" href="../../../index.html">Study Atlas</a><a href="../../../index.html">Home</a><a href="../../../topics.html">Topics</a><a href="../../../templates.html">Templates</a><a href="../../../topics/pop2piano/index.html">Pop2Piano</a><a href="../index.html">DeepSeek V4</a></div></header><main class="wrap"><section class="hero"><p class="eyebrow">Related Research · 2023 · systems</p><h1>Ring Attention with Blockwise Transformers for Near-Infinite Context</h1><p class="lead">아주 긴 context를 시스템 병렬화로 처리하는 연구. V4의 모델 구조적 접근과 대비됩니다.</p><p><a class="button" href="https://arxiv.org/abs/2310.01889">원문/자료 보기</a> <a class="button" href="../reviews.html">리뷰 목록</a></p></section><section class="grid g2"><article class="card"><h3>문제의식</h3><p>context length가 커질수록 attention 계산과 메모리 요구량이 단일 GPU/노드 한계를 넘습니다. 긴 context를 다루려면 모델 구조뿐 아니라 분산 시스템 설계가 필요합니다.</p></article><article class="card"><h3>방법</h3><p>Ring Attention은 sequence를 block으로 나누고 여러 device가 ring 형태로 key/value block을 주고받으며 blockwise attention을 계산합니다. 각 device는 자기 query block을 들고 있고, KV block이 ring을 따라 이동하는 동안 attention 계산과 통신을 overlap합니다. 이를 통해 각 device가 전체 context를 한 번에 들고 있지 않아도 approximation 없이 훨씬 긴 sequence를 처리할 수 있습니다.</p></article><article class="card"><h3>기여</h3><p>long-context는 단순 모델 아키텍처 문제가 아니라 distributed systems 문제라는 점을 보여줬습니다. near-infinite context라는 방향성을 실험적으로 제시했습니다.</p></article><article class="card"><h3>DeepSeek V4와의 연결</h3><p>V4는 CSA/HCA와 KV cache 효율로 단일 요청의 비용을 줄이는 쪽에 가깝고, Ring Attention은 device parallelism으로 context 한계를 밀어붙이는 쪽입니다. 대규모 V4 serving에서는 두 관점이 함께 필요할 수 있습니다.</p></article></section><section class="panel warn"><h2>한계와 읽을 때 던질 질문</h2><p>분산 통신 비용, latency, implementation complexity가 큽니다. 실제 사용자-facing agent에서는 throughput보다 tail latency가 문제가 될 수 있습니다.</p></section><section class="panel"><h2>세미나용 체크포인트</h2><ul><li>이 연구가 해결하는 병목은 <strong>모델 용량</strong>, <strong>context 길이</strong>, <strong>attention 계산</strong>, <strong>KV cache</strong>, <strong>agent 평가</strong> 중 어디에 가까운가?</li><li>DeepSeek V4의 1M context 주장을 검증할 때 이 연구에서 가져올 수 있는 실험 기준은 무엇인가?</li><li>이 접근이 실제 제품 serving에서 비용, latency, 품질 중 무엇을 개선하고 무엇을 악화시킬 수 있는가?</li></ul></section><div class="next"><a href="longlora.html">← Previous</a><a href="streamingllm.html">Next →</a></div></main><footer><div class="wrap">Expandable learning pages for concepts, paper reviews, quizzes, and research planning.</div></footer><script src="../../../script.js"></script></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ring Attention with Blockwise Transformers for Near-Infinite Context · DeepSeek V4</title>
+  <meta name="description" content="Ring Attention with Blockwise Transformers for Near-Infinite Context 상세 리뷰">
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap nav">
+      <a class="brand" href="../../../index.html">Study Atlas</a>
+      <a href="../../../index.html">Home</a>
+      <a href="../../../topics.html">Topics</a>
+      <a href="../../../templates.html">Templates</a>
+      <a href="../../../topics/pop2piano/index.html">Pop2Piano</a>
+      <a href="../index.html">DeepSeek V4</a>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="eyebrow">Related Research · 2023 · systems</p>
+      <h1>Ring Attention with Blockwise Transformers for Near-Infinite Context</h1>
+      <p class="lead">긴 context를 “한 GPU에 더 많이 올리는 문제”가 아니라 sequence dimension을 분산하는 시스템 문제로 재정의한 논문입니다. DeepSeek V4의 장문맥 주장을 읽을 때, 모델 구조와 serving 병렬화가 어디서 만나는지 보는 기준점이 됩니다.</p>
+      <p><a class="button" href="https://arxiv.org/abs/2310.01889">원문/자료 보기</a> <a class="button" href="../reviews.html">리뷰 목록</a></p>
+    </section>
+
+    <section class="grid g2">
+      <article class="card">
+        <h3>문제의식</h3>
+        <p>Transformer의 self-attention은 sequence 길이가 늘수록 attention score와 KV 저장량이 급격히 커집니다. FlashAttention류의 kernel 최적화가 메모리 I/O를 줄여도, 단일 device가 감당해야 하는 sequence 길이 자체가 커지면 결국 context window 확장이 막힙니다.</p>
+        <p>Ring Attention의 핵심 질문은 단순합니다. “모델 파라미터가 아니라 token sequence를 여러 device에 나눠 담으면, approximation 없이 더 긴 context를 처리할 수 있는가?”</p>
+      </article>
+      <article class="card">
+        <h3>핵심 아이디어</h3>
+        <p>Sequence를 block으로 쪼개고, 각 device는 자기 query block을 유지합니다. Key/value block은 device들 사이를 ring 형태로 순환하고, 각 device는 도착한 KV block에 대해 blockwise attention을 계산합니다.</p>
+        <p>중요한 점은 통신과 계산을 겹친다는 것입니다. 다음 KV block이 ring을 타고 오는 동안 현재 block의 attention을 계산해, device 수에 비례해 sequence 길이를 늘리면서도 추가 통신/계산 overhead를 작게 유지하려고 합니다.</p>
+      </article>
+      <article class="card">
+        <h3>왜 approximation이 아닌가</h3>
+        <p>이 접근은 sparse attention처럼 일부 token만 보거나, retrieval처럼 context를 외부에서 고르는 방식이 아닙니다. Blockwise로 나눠 계산하지만 softmax normalization을 streaming 방식으로 유지해 full attention과 같은 결과를 목표로 합니다.</p>
+        <p>따라서 “긴 문맥을 대충 압축해서 본다”가 아니라 “전체 문맥을 보되, 계산 순서와 데이터 배치를 바꾼다”에 가깝습니다.</p>
+      </article>
+      <article class="card">
+        <h3>실험이 말하는 것</h3>
+        <p>논문은 language modeling과 reinforcement learning 작업에서 million-token급 context를 다루는 방향을 제시합니다. 저자들은 기존 memory-efficient Transformer 대비 device 수만큼 더 긴 sequence를 학습·추론할 수 있다고 주장합니다.</p>
+        <p>다만 이 수치는 모델 품질 하나만의 성과라기보다, interconnect bandwidth, pipeline overlap, block 크기 선택이 함께 맞아떨어질 때 가능한 시스템 성과로 읽어야 합니다.</p>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>DeepSeek V4와의 연결</h2>
+      <p>DeepSeek V4 쪽에서 CSA/HCA, KV cache 효율화, long-context scaling을 본다면 Ring Attention은 보완적인 관점입니다. 전자는 한 요청을 더 싸게 처리하는 모델·메모리 구조의 문제에 가깝고, 후자는 context dimension 자체를 여러 device로 펼치는 분산 실행 문제에 가깝습니다.</p>
+      <ul>
+        <li><strong>모델 구조 관점:</strong> attention 계산량과 KV cache를 줄이면 같은 hardware에서 더 긴 context 또는 더 많은 동시 요청을 처리할 수 있습니다.</li>
+        <li><strong>시스템 관점:</strong> sequence parallelism을 잘 설계하면 단일 device 메모리 한계를 넘어 context window를 확장할 수 있습니다.</li>
+        <li><strong>serving 관점:</strong> 실제 제품에서는 평균 throughput보다 p95/p99 latency, KV 이동 비용, scheduler 복잡도가 더 큰 병목이 될 수 있습니다.</li>
+      </ul>
+    </section>
+
+    <section class="panel warn">
+      <h2>한계와 주의점</h2>
+      <ul>
+        <li><strong>통신 의존성:</strong> ring 구조는 device 간 bandwidth와 latency에 민감합니다. NVLink/InfiniBand급 환경과 일반 cloud interconnect의 체감 성능은 다를 수 있습니다.</li>
+        <li><strong>작은 batch·interactive serving:</strong> 긴 문서 하나를 빠르게 답해야 하는 agent use case에서는 overlap 효율이 충분히 나오지 않을 수 있습니다.</li>
+        <li><strong>구현 복잡도:</strong> numerically stable streaming softmax, activation checkpointing, attention kernel, distributed runtime이 함께 맞아야 합니다.</li>
+        <li><strong>품질 문제는 별개:</strong> million-token을 “넣을 수 있음”과 그 안에서 정확히 찾고 추론할 수 있음은 다릅니다. Needle-in-a-haystack, long-range dependency, multi-hop QA를 따로 봐야 합니다.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>세미나용 체크포인트</h2>
+      <ul>
+        <li>Ring Attention이 해결하는 병목은 <strong>모델 용량</strong>, <strong>context 길이</strong>, <strong>attention 계산</strong>, <strong>KV cache</strong>, <strong>agent 평가</strong> 중 어디에 가까운가?</li>
+        <li>DeepSeek V4의 1M context 주장을 검증할 때 “처리 가능 길이”, “정확도”, “latency”, “cost per request”를 어떻게 분리해서 볼 것인가?</li>
+        <li>Ring Attention, FlashAttention, sparse/retrieval attention은 서로 대체재인가, 아니면 다른 layer의 최적화인가?</li>
+        <li>실제 serving에서 ring parallelism을 쓰려면 scheduler, KV cache placement, request batching을 어떻게 설계해야 할까?</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>한 줄 요약</h2>
+      <p>Ring Attention은 long context를 가능하게 하는 “마법 attention”이라기보다, full attention을 유지한 채 sequence를 device 축으로 분산하는 실행 전략입니다. DeepSeek V4 같은 장문맥 모델을 평가할 때는 모델 구조의 효율성과 분산 serving의 현실성을 따로 놓고 봐야 합니다.</p>
+    </section>
+
+    <div class="next"><a href="longlora.html">← Previous</a><a href="streamingllm.html">Next →</a></div>
+  </main>
+  <footer><div class="wrap">Expandable learning pages for concepts, paper reviews, quizzes, and research planning.</div></footer>
+  <script src="../../../script.js"></script>
+</body>
+</html>
