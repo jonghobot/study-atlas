@@ -1,1 +1,55 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>LLM Parallelism · Study Atlas</title><meta name="description" content="LLM 병렬화: 학습과 서빙을 위한 data, tensor, pipeline, sequence, expert, KV cache 병렬화"><link rel="stylesheet" href="../../styles.css"></head><body><header class="top"><div class="wrap nav"><a class="brand" href="../../index.html">Study Atlas</a><a href="../../index.html">Home</a><a href="../../topics.html">Topics</a><a href="../../templates.html">Templates</a><a href="../../topics/pop2piano/index.html">Pop2Piano</a><a href="../../topics/deepseek-v4/index.html">DeepSeek V4</a><a href="../../topics/llm-parallelism/index.html">LLM Parallelism</a></div></header><main class="wrap"><section class="hero"><p class="eyebrow">Topic 03 · LLM Systems</p><h1>LLM Parallelism: 거대 모델을 나눠 학습하고 서빙하는 법</h1><p class="lead">거대 LLM은 알고리즘만으로 커지지 않습니다. 파라미터, activation, sequence, expert, KV cache, request batch를 여러 GPU와 노드에 어떻게 나눌지 설계해야 학습과 서빙이 현실화됩니다.</p><p><span class="ghost">data parallel</span><span class="ghost">tensor parallel</span><span class="ghost">pipeline parallel</span><span class="ghost">ZeRO/FSDP</span><span class="ghost">sequence parallel</span><span class="ghost">expert parallel</span><span class="ghost">serving</span></p></section><section class="panel toc"><h2>읽는 순서</h2><a href="concepts.html">1. Concepts — LLM 병렬화 핵심 개념</a><a href="reviews.html">2. References — 대표 논문과 시스템 자료</a><a href="quiz.html">3. Quiz — 이해 확인 질문</a></section><section class="grid g3"><article class="card"><h3>Training</h3><p class="muted">Data, tensor, pipeline, ZeRO/FSDP를 조합해 모델 상태와 activation을 분산합니다.</p></article><article class="card"><h3>Long Context</h3><p class="muted">Sequence/context parallelism과 attention kernel 최적화로 긴 prompt의 prefill 부담을 다룹니다.</p></article><article class="card"><h3>Serving</h3><p class="muted">Continuous batching, PagedAttention, chunked prefill로 KV cache와 tail latency를 관리합니다.</p></article></section></main><footer><div class="wrap">Expandable learning pages for concepts, paper reviews, quizzes, and research planning.</div></footer><script src="../../script.js"></script></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM Parallelism · Study Atlas</title>
+  <meta name="description" content="LLM 병렬화: 학습과 서빙을 위한 data, tensor, pipeline, sequence, expert, KV cache 병렬화">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+  <header class="top"><div class="wrap nav"><a class="brand" href="../../index.html">Study Atlas</a><a href="../../index.html">Home</a><a href="../../topics.html">Topics</a><a href="../../templates.html">Templates</a><a href="../../topics/pop2piano/index.html">Pop2Piano</a><a href="../../topics/deepseek-v4/index.html">DeepSeek V4</a><a href="../../topics/llm-parallelism/index.html">LLM Parallelism</a></div></header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="eyebrow">Topic 03 · LLM Systems</p>
+      <h1>LLM Parallelism: 거대 모델을 나눠 학습하고 서빙하는 법</h1>
+      <p class="lead">거대 LLM은 알고리즘만으로 커지지 않습니다. 파라미터, activation, sequence, expert, KV cache, request batch를 여러 GPU와 노드에 어떻게 나눌지 설계해야 학습과 서빙이 현실화됩니다.</p>
+      <p><span class="ghost">data parallel</span><span class="ghost">tensor parallel</span><span class="ghost">pipeline parallel</span><span class="ghost">ZeRO/FSDP</span><span class="ghost">sequence parallel</span><span class="ghost">expert parallel</span><span class="ghost">serving</span><span class="ghost">2018–2025 timeline</span></p>
+    </section>
+
+    <section class="panel toc">
+      <h2>읽는 순서</h2>
+      <a href="concepts.html">1. Concepts — LLM 병렬화 핵심 개념</a>
+      <a href="reviews.html">2. References — 대표 자료와 연대</a>
+      <a href="quiz.html">3. Quiz — 이해 확인 질문</a>
+    </section>
+
+    <section class="grid g3">
+      <article class="card"><h3>Training</h3><p class="muted">Data, tensor, pipeline, ZeRO/FSDP를 조합해 모델 상태와 activation을 분산합니다.</p></article>
+      <article class="card"><h3>Long Context</h3><p class="muted">Sequence/context parallelism과 attention kernel 최적화로 긴 prompt의 prefill 부담을 다룹니다.</p></article>
+      <article class="card"><h3>Serving</h3><p class="muted">Continuous batching, PagedAttention, chunked prefill, prefill/decode disaggregation으로 KV cache와 tail latency를 관리합니다.</p></article>
+    </section>
+
+    <section class="panel">
+      <h2>연대별 핵심 흐름</h2>
+      <div class="paper"><div class="year">2018–2019</div><div><h3>Pipeline/Tensor/Memory sharding의 기초</h3><p>GPipe, Megatron-LM, ZeRO가 “layer를 나누기”, “행렬 곱을 나누기”, “모델 상태를 shard하기”라는 기본 언어를 만들었습니다.</p></div></div>
+      <div class="paper"><div class="year">2020–2022</div><div><h3>MoE와 자동 병렬화</h3><p>GShard/Switch Transformer가 expert parallelism을 대중화했고, Alpa는 병렬화 config를 사람이 손으로만 고르지 않는 방향을 제시했습니다.</p></div></div>
+      <div class="paper"><div class="year">2023</div><div><h3>Long-context와 serving 병목의 독립</h3><p>Ulysses/Ring Attention은 sequence를 나누는 법을, vLLM/PagedAttention과 SARATHI는 KV cache와 prefill/decode scheduling을 전면에 올렸습니다.</p></div></div>
+      <div class="paper"><div class="year">2024–2025</div><div><h3>Disaggregated serving과 KV-aware runtime</h3><p>DistServe, USP, 4D memory estimator, FlashInfer, KV-aware online scheduling처럼 “어떤 parallelism을 고를지”와 “어떻게 runtime에서 운영할지”가 최신 쟁점입니다.</p></div></div>
+    </section>
+
+    <section class="panel warn">
+      <h2>내 제안</h2>
+      <p>이 주제는 단순 개념 페이지보다 <strong>학습 병렬화</strong>, <strong>long-context 병렬화</strong>, <strong>serving 병렬화</strong> 세 갈래로 키우는 게 좋겠습니다. 특히 다음 상세 리뷰는 가치가 큽니다.</p>
+      <ul>
+        <li><strong>vLLM/PagedAttention:</strong> 실무 serving 이해의 중심.</li>
+        <li><strong>DistServe vs Splitwise:</strong> prefill/decode 분리 아키텍처 비교.</li>
+        <li><strong>Ulysses vs Ring Attention vs USP:</strong> long-context sequence parallelism 비교.</li>
+        <li><strong>4D parallelism config 실습:</strong> GPU 수와 모델 크기에 따라 TP/PP/DP/CP를 고르는 예제.</li>
+      </ul>
+    </section>
+  </main>
+  <footer><div class="wrap">Expandable learning pages for concepts, paper reviews, quizzes, and research planning.</div></footer>
+  <script src="../../script.js"></script>
+</body>
+</html>
