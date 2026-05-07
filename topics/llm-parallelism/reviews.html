@@ -15,7 +15,7 @@
     <section class="hero">
       <p class="eyebrow">References · Timeline</p>
       <h1>LLM Parallelism 대표 자료와 연대</h1>
-      <p class="lead">각 자료를 읽을 때 “무엇을 나누는가, 어떤 통신이 생기는가, 학습/서빙 중 어디에 더 중요한가”를 기준으로 보면 좋습니다. 아래는 2018년 pipeline 병렬화부터 2025년 serving scheduler/attention engine까지의 흐름입니다.</p>
+      <p class="lead">각 자료를 읽을 때 “무엇을 나누는가, 어떤 통신이 생기는가, 학습/서빙 중 어디에 더 중요한가”를 기준으로 보면 좋습니다. 아래는 2018년 pipeline 병렬화부터 2026년 disaggregated serving, KV cache scheduling, compiler-based sequence parallelism까지의 흐름입니다.</p>
     </section>
 
     <section class="panel">
@@ -27,6 +27,7 @@
       <div class="paper"><div class="year">2023<br><span class="tag">long context/serving</span></div><div><h3>DeepSpeed Ulysses, PagedAttention/vLLM, SARATHI, Ring Attention, Splitwise</h3><p>긴 sequence 병렬화와 LLM serving의 KV cache·prefill/decode 병목이 독립 연구 주제로 부상.</p></div></div>
       <div class="paper"><div class="year">2024<br><span class="tag">disaggregation/4D</span></div><div><h3>DistServe, USP, 4D Parallelism Estimator, SGLang</h3><p>Prefill/decode 분리, sequence parallelism 통합, parallel config 추정, structured LLM program runtime으로 관심이 넓어짐.</p></div></div>
       <div class="paper"><div class="year">2025<br><span class="tag">scheduler/kernel</span></div><div><h3>FlashInfer, Online Scheduling with KV Cache Constraints</h3><p>다양한 KV layout과 attention pattern을 다루는 serving kernel, KV cache 제약을 명시적으로 모델링한 scheduler가 중요해짐.</p></div></div>
+      <div class="paper"><div class="year">2026<br><span class="tag">KV/PD/SP</span></div><div><h3>AutoSP, PPD, Prefill-as-a-Service, Tutti, SplitZip</h3><p>Sequence parallelism 자동화, multi-turn prefill routing, cross-datacenter prefill, SSD-backed KV, KV transfer compression처럼 운영 단위가 더 세분화됨.</p></div></div>
     </section>
 
     <section class="panel">
@@ -51,6 +52,12 @@
         <tr><td>2024</td><td><a href="https://arxiv.org/abs/2411.06465">Accelerating LLM Training with 4D Parallelism and Memory Consumption Estimator</a></td><td>4D config</td><td>DP/TP/PP/CP 조합에서 메모리 사용량을 추정해 OOM 없이 config를 고르는 문제를 다룸.</td></tr>
         <tr><td>2025</td><td><a href="https://arxiv.org/abs/2501.01005">FlashInfer</a></td><td>Serving attention engine</td><td>다양한 KV cache layout, sparse/paged attention, serving kernel customization을 한 축으로 정리.</td></tr>
         <tr><td>2025</td><td><a href="https://arxiv.org/abs/2502.07115">Online Scheduling for LLM Inference with KV Cache Constraints</a></td><td>KV-aware scheduling</td><td>KV cache memory 제약을 명시적으로 모델링해 online batching/scheduling을 설계.</td></tr>
+      
+        <tr><td>2026</td><td><a href="https://arxiv.org/abs/2604.27089">AutoSP</a></td><td>Compiler sequence parallelism</td><td>Long-context sequence parallelism과 activation checkpointing을 compiler가 자동 적용하는 방향.</td></tr>
+        <tr><td>2026</td><td><a href="https://arxiv.org/abs/2603.13358">Not All Prefills Are Equal / PPD Disaggregation</a></td><td>Multi-turn serving</td><td>Turn 2 이후 append-prefill을 decode node에서 처리해 multi-turn TTFT를 줄이는 접근.</td></tr>
+        <tr><td>2026</td><td><a href="https://arxiv.org/abs/2604.15039">Prefill-as-a-Service</a></td><td>Cross-datacenter PD</td><td>Hybrid attention 시대에 prefill을 원격 서비스처럼 분리할 수 있는지 탐색.</td></tr>
+        <tr><td>2026</td><td><a href="https://arxiv.org/abs/2605.03375">Tutti</a></td><td>SSD-backed KV</td><td>Long-context serving에서 SSD 계층까지 포함한 KV cache 운영 문제를 다룸.</td></tr>
+        <tr><td>2026</td><td><a href="https://arxiv.org/abs/2605.01708">SplitZip</a></td><td>KV transfer compression</td><td>Disaggregated serving에서 prefill→decode KV handoff 비용을 lossless compression으로 줄이려는 접근.</td></tr>
       </table>
     </section>
 
@@ -75,7 +82,7 @@
       </ul>
     </section>
 
-    <div class="next"><a href="concepts.html">← Concepts</a><a href="quiz.html">Quiz →</a></div>
+    <div class="next"><a href="concepts.html">← Concepts</a><a href="summaries.html">상세 요약 →</a></div>
   </main>
   <footer><div class="wrap">Expandable learning pages for concepts, paper reviews, quizzes, and research planning.</div></footer>
   <script src="../../script.js"></script>
